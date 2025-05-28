@@ -2,67 +2,33 @@
 import { useState } from 'react';
 import AdminLayout from './AdminLayout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Search, QrCode, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { Search, QrCode, UserCheck, Calendar, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AttendancePage = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
-  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Mock attendance data
   const todayAttendance = [
-    {
-      id: '1',
-      name: 'John Smith',
-      memberId: 'GYM001',
-      checkIn: '08:30 AM',
-      checkOut: '10:15 AM',
-      duration: '1h 45m',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      name: 'Sarah Johnson',
-      memberId: 'GYM002',
-      checkIn: '09:15 AM',
-      checkOut: null,
-      duration: null,
-      status: 'active',
-    },
-    {
-      id: '3',
-      name: 'Mike Wilson',
-      memberId: 'GYM003',
-      checkIn: '10:00 AM',
-      checkOut: '11:30 AM',
-      duration: '1h 30m',
-      status: 'completed',
-    },
-    {
-      id: '4',
-      name: 'Emily Davis',
-      memberId: 'GYM004',
-      checkIn: '11:45 AM',
-      checkOut: null,
-      duration: null,
-      status: 'active',
-    },
+    { id: 1, name: 'John Smith', memberId: 'GYM001', checkIn: '08:30 AM', checkOut: '10:15 AM', status: 'completed' },
+    { id: 2, name: 'Sarah Johnson', memberId: 'GYM002', checkIn: '07:15 AM', checkOut: null, status: 'active' },
+    { id: 3, name: 'Mike Wilson', memberId: 'GYM003', checkIn: '18:00 PM', checkOut: '19:30 PM', status: 'completed' },
+    { id: 4, name: 'Emily Davis', memberId: 'GYM004', checkIn: '08:45 AM', checkOut: '10:20 AM', status: 'completed' },
+    { id: 5, name: 'Chris Brown', memberId: 'GYM005', checkIn: '17:30 PM', checkOut: null, status: 'active' },
   ];
 
-  const membersList = [
-    { id: '1', name: 'John Smith', memberId: 'GYM001', attendance: 85 },
-    { id: '2', name: 'Sarah Johnson', memberId: 'GYM002', attendance: 72 },
-    { id: '3', name: 'Mike Wilson', memberId: 'GYM003', attendance: 45 },
-    { id: '4', name: 'Emily Davis', memberId: 'GYM004', attendance: 92 },
-    { id: '5', name: 'Chris Brown', memberId: 'GYM005', attendance: 68 },
+  const allMembers = [
+    { id: 1, name: 'John Smith', memberId: 'GYM001' },
+    { id: 2, name: 'Sarah Johnson', memberId: 'GYM002' },
+    { id: 3, name: 'Mike Wilson', memberId: 'GYM003' },
+    { id: 4, name: 'Emily Davis', memberId: 'GYM004' },
+    { id: 5, name: 'Chris Brown', memberId: 'GYM005' },
+    { id: 6, name: 'Lisa White', memberId: 'GYM006' },
+    { id: 7, name: 'David Miller', memberId: 'GYM007' },
   ];
 
   const filteredAttendance = todayAttendance.filter(record =>
@@ -70,104 +36,103 @@ const AttendancePage = () => {
     record.memberId.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredMembers = membersList.filter(member =>
+  const filteredMembers = allMembers.filter(member =>
     member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.memberId.toLowerCase().includes(searchTerm.toLowerCase())
+  ).filter(member => 
+    !todayAttendance.find(attendance => attendance.id === member.id)
   );
 
-  const handleManualCheckIn = (memberId: string, memberName: string) => {
+  const handleManualCheckIn = (memberId: number, memberName: string) => {
     toast.success(`${memberName} checked in successfully!`);
   };
 
-  const handleCheckOut = (memberId: string, memberName: string) => {
+  const handleCheckOut = (memberId: number, memberName: string) => {
     toast.success(`${memberName} checked out successfully!`);
   };
 
-  const getStatusBadge = (status: string) => {
+  const handleQRCheckIn = () => {
+    toast.info('QR Code scanner would open here in a real implementation');
+  };
+
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+        return 'bg-green-100 text-green-800';
       case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>;
+        return 'bg-blue-100 text-blue-800';
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getAttendanceColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
+  const stats = [
+    { title: 'Today\'s Check-ins', value: todayAttendance.length, icon: UserCheck, color: 'bg-blue-500' },
+    { title: 'Currently Active', value: todayAttendance.filter(a => a.status === 'active').length, icon: Clock, color: 'bg-green-500' },
+    { title: 'Completed Sessions', value: todayAttendance.filter(a => a.status === 'completed').length, icon: Calendar, color: 'bg-purple-500' },
+  ];
 
   return (
     <AdminLayout>
       <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Attendance Management</h1>
-          <p className="text-gray-600 mt-1">Track and manage member attendance</p>
-        </div>
-
-        {/* Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search members..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Attendance Management</h1>
+            <p className="text-gray-600 mt-1">Track member check-ins and check-outs</p>
           </div>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-
-          <Button
-            onClick={() => setShowQRScanner(!showQRScanner)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
+          <Button onClick={handleQRCheckIn} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
             <QrCode className="w-4 h-4 mr-2" />
             QR Check-in
           </Button>
         </div>
 
-        {/* QR Scanner Simulation */}
-        {showQRScanner && (
-          <Card className="mb-6 bg-blue-50 border-blue-200">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <QrCode className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">QR Code Scanner Active</h3>
-                <p className="text-blue-700 mb-4">Members can scan their QR code to check in</p>
-                <Button variant="outline" onClick={() => setShowQRScanner(false)}>
-                  Stop Scanner
-                </Button>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {stats.map((stat, index) => (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className={`${stat.color} p-3 rounded-lg`}>
+                    <stat.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-gray-600">{stat.title}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Date and Search */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-40"
+                />
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search by name or member ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Today's Attendance */}
@@ -176,101 +141,102 @@ const AttendancePage = () => {
               <CardTitle>Today's Attendance ({filteredAttendance.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredAttendance.map((record) => (
-                  <div key={record.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-medium text-gray-900">{record.name}</h4>
-                        <p className="text-sm text-gray-600">{record.memberId}</p>
-                      </div>
-                      {getStatusBadge(record.status)}
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">Check In:</span>
-                        <p className="font-medium">{record.checkIn}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Check Out:</span>
-                        <p className="font-medium">{record.checkOut || 'Still inside'}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Duration:</span>
-                        <p className="font-medium">{record.duration || 'Ongoing'}</p>
+                  <div key={record.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{record.name}</div>
+                      <div className="text-sm text-gray-600">ID: {record.memberId}</div>
+                      <div className="text-sm text-gray-600">
+                        In: {record.checkIn} {record.checkOut && `• Out: ${record.checkOut}`}
                       </div>
                     </div>
-                    {record.status === 'active' && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleCheckOut(record.id, record.name)}
-                        className="mt-3 w-full"
-                      >
-                        Check Out
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(record.status)}>
+                        {record.status === 'active' ? 'Active' : 'Completed'}
+                      </Badge>
+                      {record.status === 'active' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCheckOut(record.id, record.name)}
+                        >
+                          Check Out
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
+                
+                {filteredAttendance.length === 0 && (
+                  <div className="text-center py-6 text-gray-500">
+                    No attendance records found for today.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Members for Manual Check-in */}
+          {/* Quick Check-in */}
           <Card>
             <CardHeader>
-              <CardTitle>Manual Check-in</CardTitle>
+              <CardTitle>Quick Check-in</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {filteredMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{member.name}</h4>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span>{member.memberId}</span>
-                        <span className={`font-medium ${getAttendanceColor(member.attendance)}`}>
-                          {member.attendance}% attendance
-                        </span>
-                      </div>
+                {filteredMembers.slice(0, 10).map((member) => (
+                  <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">{member.name}</div>
+                      <div className="text-sm text-gray-600">ID: {member.memberId}</div>
                     </div>
                     <Button
                       size="sm"
                       onClick={() => handleManualCheckIn(member.id, member.name)}
                       className="bg-green-600 hover:bg-green-700"
                     >
-                      <CheckCircle className="w-4 h-4 mr-1" />
+                      <UserCheck className="w-4 h-4 mr-1" />
                       Check In
                     </Button>
                   </div>
                 ))}
+                
+                {filteredMembers.length === 0 && (
+                  <div className="text-center py-6 text-gray-500">
+                    All active members have already checked in today.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Attendance Summary */}
+        {/* Recent Activity */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Attendance Summary</CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-blue-600">24</p>
-                <p className="text-gray-600">Today's Check-ins</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-green-600">18</p>
-                <p className="text-gray-600">Completed Sessions</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-orange-600">6</p>
-                <p className="text-gray-600">Currently Inside</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-purple-600">76%</p>
-                <p className="text-gray-600">Average Attendance</p>
-              </div>
+            <div className="space-y-3">
+              {[
+                { action: 'Check-in', member: 'John Smith', time: '5 minutes ago', type: 'checkin' },
+                { action: 'Check-out', member: 'Sarah Johnson', time: '12 minutes ago', type: 'checkout' },
+                { action: 'Check-in', member: 'Mike Wilson', time: '1 hour ago', type: 'checkin' },
+                { action: 'Check-out', member: 'Emily Davis', time: '2 hours ago', type: 'checkout' },
+              ].map((activity, index) => (
+                <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                  <div className="flex items-center">
+                    <div className={`w-2 h-2 rounded-full mr-3 ${
+                      activity.type === 'checkin' ? 'bg-green-500' : 'bg-blue-500'
+                    }`} />
+                    <div>
+                      <span className="font-medium">{activity.member}</span>
+                      <span className="text-gray-600 ml-2">{activity.action}</span>
+                    </div>
+                  </div>
+                  <span className="text-sm text-gray-500">{activity.time}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
